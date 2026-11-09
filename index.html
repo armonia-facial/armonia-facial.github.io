@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Armonía">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<script>window.ARMONIA_RUTAS={modelo:"face_landmarker.task"};window.ARMONIA_INFORME_DEFECTO={autor:"",codigo:""};</script>
+<title>Armonía Facial</title>
+<meta name="description" content="Análisis geométrico del rostro con métodos numéricos, en el teléfono.">
+<meta name="theme-color" content="#0e1116">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icono-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Concepto: instrumento de medición de bolsillo — una columna, lecturas grandes, cifras en monoespaciada. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --surface-2: #eaeef4; --line: #d6dde7;
+  --fg: #101828; --fg-2: #46536a; --muted: #75839a;
+  --accent: #2a78d6; --accent-2: #6250d6; --accent-soft: #e2ecfa; --on-accent: #ffffff;
+  --warn: #9a6200; --warn-soft: #fbf1db; --overlay: rgba(16, 24, 40, 0.55);
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 14px; --nav-h: 64px;
+  --formula-filter: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1116; --surface: #161a21; --surface-2: #1e232c; --line: #2b323d;
+    --fg: #eef1f6; --fg-2: #c2c9d4; --muted: #8b95a5;
+    --accent: #3987e5; --accent-2: #9085e9; --accent-soft: #172a42; --on-accent: #ffffff;
+    --warn: #fab219; --warn-soft: #2d2410; --overlay: rgba(0, 0, 0, 0.6);
+    --formula-filter: invert(1); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1116; --surface: #161a21; --surface-2: #1e232c; --line: #2b323d;
+  --fg: #eef1f6; --fg-2: #c2c9d4; --muted: #8b95a5;
+  --accent: #3987e5; --accent-2: #9085e9; --accent-soft: #172a42; --on-accent: #ffffff;
+  --warn: #fab219; --warn-soft: #2d2410; --overlay: rgba(0, 0, 0, 0.6);
+  --formula-filter: invert(1); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body);
+  font-size: 15px; line-height: 1.5; -webkit-tap-highlight-color: transparent;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap {
+  max-width: 600px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 14px;
+}
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 19px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); font-size: 13px; }
+.mono, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; gap: 12px; padding-top: 4px; }
+.topbar img { width: 40px; height: 40px; border-radius: 10px; }
+.topbar .t { display: flex; flex-direction: column; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn {
+  appearance: none; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg);
+  font: 600 15px var(--font-body); padding: 12px 16px; border-radius: 12px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1 1 140px; min-height: 48px;
+  transition: transform .12s ease, background-color .2s ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn:focus-visible, .chip:focus-visible, .tab:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn svg { width: 20px; height: 20px; flex: none; }
+.btn[disabled] { opacity: .5; cursor: default; }
+input[type=file] { display: none; }
+
+/* lectura principal */
+.reading { display: grid; grid-template-columns: 150px 1fr; gap: 16px; align-items: center; }
+.gauge { position: relative; width: 150px; height: 150px; }
+.gauge svg { width: 100%; height: 100%; display: block; }
+.gauge .val { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.gauge .val b { font-family: var(--font-mono); font-size: 34px; font-weight: 500; letter-spacing: -0.02em; }
+.gauge .val span { font-size: 11px; color: var(--muted); }
+.tier { font-family: var(--font-display); font-size: 20px; font-weight: 700; line-height: 1.2; }
+.stars { display: flex; gap: 4px; }
+.stars svg { width: 18px; height: 18px; }
+.badge { align-self: flex-start; font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.note { background: var(--surface-2); border-left: 3px solid var(--accent-2); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; color: var(--fg-2); }
+.note.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+.note b { color: var(--fg); }
+
+/* visor */
+.viewer { position: relative; width: 100%; aspect-ratio: 1; max-width: 100%; border-radius: 12px; overflow: hidden; background: #0f172a; touch-action: pan-y; user-select: none; }
+.viewer canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.viewer .before { clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0); }
+.viewer .handle { position: absolute; top: 0; bottom: 0; left: var(--split, 50%); width: 2px; background: #fff; transform: translateX(-1px); pointer-events: none; }
+.viewer .knob { position: absolute; top: 50%; left: var(--split, 50%); width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: var(--accent); border: 2px solid #fff; pointer-events: none; display: grid; place-items: center; color: #fff; font: 700 13px var(--font-mono); }
+.viewer .lbl { position: absolute; top: 10px; font: 600 11px var(--font-display); letter-spacing: .08em; color: #fff; background: rgba(15, 23, 42, .75); padding: 4px 9px; border-radius: 999px; }
+.viewer .lbl.l { left: 10px; } .viewer .lbl.r { right: 10px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--fg-2); font: 500 13px var(--font-body); padding: 7px 12px; border-radius: 999px; cursor: pointer; min-height: 36px; }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+/* indicadores */
+.ind { display: grid; grid-template-columns: 26px 1fr auto; gap: 4px 10px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; background: none; border-left: 0; border-right: 0; border-bottom: 0; text-align: left; color: inherit; font: inherit; width: 100%; }
+.ind:first-of-type { border-top: 0; }
+.ind .n { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: 600 12px var(--font-mono); display: grid; place-items: center; }
+.ind .name { font-weight: 600; font-size: 14.5px; min-width: 0; }
+.ind .s { font-family: var(--font-mono); font-size: 17px; font-weight: 500; }
+.ind .bar { grid-column: 2 / 4; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.ind .bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.ind .det { grid-column: 2 / 4; font-size: 12.5px; color: var(--muted); font-family: var(--font-mono); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.stat { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.stat .k { font-size: 12px; color: var(--muted); }
+.stat .v { font: 500 17px var(--font-mono); overflow-wrap: anywhere; }
+
+/* cálculos */
+details.sec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+details.sec > summary { list-style: none; cursor: pointer; padding: 14px 16px; display: flex; gap: 12px; align-items: center; font-family: var(--font-display); font-weight: 600; font-size: 16px; }
+details.sec > summary::-webkit-details-marker { display: none; }
+details.sec > summary .n { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font: 600 13px var(--font-mono); }
+details.sec > summary::after { content: "+"; margin-left: auto; font: 500 20px var(--font-mono); color: var(--muted); }
+details.sec[open] > summary::after { content: "−"; }
+.secbody { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.formulas { background: var(--surface-2); border-left: 3px solid var(--accent); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; overflow-x: auto; }
+.formulas img { filter: var(--formula-filter); max-width: none; height: auto; }
+.kv { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 4px 12px; font-size: 13.5px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: var(--font-mono); font-size: 12.5px; overflow-wrap: anywhere; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th { background: var(--surface-2); color: var(--fg-2); text-align: left; font-weight: 600; padding: 7px 9px; white-space: nowrap; }
+td { padding: 6px 9px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+td.r { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+tr.total td { font-weight: 600; }
+pre.block { margin: 0; background: var(--surface-2); border-radius: 10px; padding: 10px 12px; font: 11.5px/1.45 var(--font-mono); color: var(--fg-2); overflow-x: auto; }
+
+/* informe */
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 13px; color: var(--fg-2); font-weight: 500; }
+.field input { font: 15px var(--font-body); color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; width: 100%; }
+.field input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+.form { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.preview { font-size: 12.5px; color: var(--muted); }
+ul.refs { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--fg-2); display: flex; flex-direction: column; gap: 4px; }
+
+/* navegación inferior */
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
+}
+nav.tabs .in { max-width: 600px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); height: var(--nav-h); }
+.tab { appearance: none; background: none; border: 0; color: var(--muted); font: 600 11.5px var(--font-display); letter-spacing: .02em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; }
+.tab svg { width: 22px; height: 22px; }
+.tab[aria-current="page"] { color: var(--accent); }
+.view[hidden] { display: none !important; }
+.view { display: flex; flex-direction: column; gap: 14px; animation: rise .35s ease both; }
+@keyframes rise { from { opacity: .4; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* capa de trabajo */
+.busy { position: fixed; inset: 0; z-index: 40; background: var(--overlay); display: grid; place-items: center; padding: 24px; }
+.busy .box { background: var(--surface); border-radius: 16px; padding: 22px; width: min(340px, 100%); display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; border: 1px solid var(--line); }
+.spin { width: 46px; height: 46px; border-radius: 50%; border: 4px solid var(--surface-2); border-top-color: var(--accent); border-right-color: var(--accent-2); animation: sp 0.9s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.toast { position: fixed; left: 50%; bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 30; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; max-width: calc(100% - 32px); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+@media (min-width: 520px) { .form { grid-template-columns: 1fr 1fr; } .form .wide { grid-column: 1 / -1; } }
+@media (max-width: 380px) { .reading { grid-template-columns: 1fr; justify-items: center; text-align: center; } .stars { justify-content: center; } .badge { align-self: center; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="topbar">
+    <img id="appIcon" alt="" width="40" height="40">
+    <div class="t">
+      <h1>Armonía Facial</h1>
+      <span class="muted">Métodos Numéricos · análisis en el teléfono</span>
+    </div>
+  </header>
+
+  <!-- ========================= ANALIZAR ========================= -->
+  <section class="view" id="v-analizar" aria-label="Analizar">
+    <div class="card">
+      <div class="row">
+        <button class="btn primary" id="btnCam" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          Tomar foto
+        </button>
+        <button class="btn" id="btnGal" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M3.5 17l5.5-5.5 4 3.5 3-2.5 4.5 4"/><circle cx="15.5" cy="9" r="1.6"/></svg>
+          Elegir de la galería
+        </button>
+      </div>
+      <input type="file" id="fileCam" accept="image/jpeg,image/png" capture="user">
+      <input type="file" id="fileGal" accept="image/jpeg,image/png">
+      <p class="muted">Foto frontal, cara completa y buena luz. La imagen se procesa en este teléfono y no se envía a ningún servidor.</p>
+    </div>
+
+    <div class="card" id="resultCard">
+      <span class="badge" id="srcBadge">Foto de ejemplo</span>
+      <div class="reading">
+        <div class="gauge" aria-hidden="true">
+          <svg viewBox="0 0 150 150">
+            <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent-2)"/></linearGradient></defs>
+            <circle cx="75" cy="75" r="62" fill="none" stroke="var(--surface-2)" stroke-width="11" stroke-linecap="round" stroke-dasharray="292.2 389.6" transform="rotate(135 75 75)"/>
+            <circle id="gArc" cx="75" cy="75" r="62" fill="none" stroke="url(#gg)" stroke-width="11" stroke-linecap="round" stroke-dasharray="0 389.6" transform="rotate(135 75 75)" style="transition: stroke-dasharray 1.4s cubic-bezier(.2,.8,.2,1)"/>
+          </svg>
+          <div class="val"><b id="gVal">—</b><span>de 100</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+          <span class="eyebrow">Índice de armonía geométrica</span>
+          <div class="tier" id="tier">Cargando el motor…</div>
+          <div class="stars" id="stars"></div>
+          <p class="muted" id="tierComment">La primera vez descarga el modelo de 478 puntos (≈ 17 MB con el motor de visión).</p>
+        </div>
+      </div>
+      <div class="note"><b>La belleza es subjetiva.</b> <span id="disc"></span></div>
+      <div class="note warn" id="warnBox" hidden></div>
+      <div class="viewer" id="miniViewer"><canvas id="miniCanvas" width="600" height="600"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap">
+        <h2>Indicadores</h2><span class="muted">Toque uno para ver su cálculo</span>
+      </div>
+      <div id="indList"></div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <!-- ========================= PUNTOS ========================= -->
+  <section class="view" id="v-puntos" aria-label="Puntos faciales" hidden>
+    <div class="card">
+      <h2>Puntos faciales</h2>
+      <p class="muted">Deslice sobre la foto para comparar la original con la analizada.</p>
+      <div class="viewer" id="viewer">
+        <canvas id="cvAfter" width="900" height="900"></canvas>
+        <canvas id="cvBefore" class="before" width="900" height="900"></canvas>
+        <div class="handle"></div><div class="knob">⇆</div>
+        <span class="lbl l">ORIGINAL</span><span class="lbl r">ANALIZADA</span>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="card">
+      <h3>Distancias medidas</h3>
+      <div class="tablewrap"><table id="distTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ========================= CÁLCULOS ========================= -->
+  <section class="view" id="v-calculos" aria-label="Cálculos" hidden>
+    <div class="card">
+      <h2>Cálculos paso a paso</h2>
+      <p class="muted">Fórmulas con los valores reales de la foto analizada: rotación, mínimos cuadrados con eliminación de Gauss, reflexión de Householder, fórmula de Gauss, Newton-Raphson y puntuación gaussiana.</p>
+    </div>
+    <div id="secs" style="display:flex;flex-direction:column;gap:10px"></div>
+  </section>
+
+  <!-- ========================= INFORME ========================= -->
+  <section class="view" id="v-informe" aria-label="Informe" hidden>
+    <div class="card">
+      <h2>Informe PDF</h2>
+      <p class="muted">Carátula y encabezado con el formato de informes de la UNIFSLB. Los datos se guardan en este teléfono.</p>
+      <form class="form" id="repForm" autocomplete="off"></form>
+      <p class="preview" id="repPreview"></p>
+      <div class="row"><button class="btn primary" id="btnPdf" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6v18h13V8z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 16.5h5"/></svg>
+        Descargar informe PDF</button>
+        <button class="btn" id="btnShare" type="button" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4M8.2 13.2l7.6 4"/></svg>
+        Compartir PDF</button>
+        <button class="btn" id="btnDefaults" type="button">Valores por defecto</button></div>
+    </div>
+    <div class="card">
+      <h3>Privacidad y ética</h3>
+      <p class="muted">Todo el análisis ocurre en este teléfono: la foto no se sube a ningún servidor. Solo se descargan el motor de visión y el modelo de MediaPipe. El resultado mide cercanía a cánones geométricos; no es un juicio sobre la persona. Use fotos propias o con consentimiento.</p>
+    </div>
+    <div class="card">
+      <h3>Referencias</h3>
+      <ul class="refs" id="refs"></ul>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" aria-label="Secciones"><div class="in">
+  <button class="tab" data-v="analizar" aria-current="page" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/><ellipse cx="12" cy="12" rx="4.2" ry="5.4"/></svg>Analizar</button>
+  <button class="tab" data-v="puntos" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 10l3 10h10l3-10z"/><path d="M12 3v9.5M4 10l8 2.5 8-2.5M7 20l5-7.5 5 7.5"/></svg>Puntos</button>
+  <button class="tab" data-v="calculos" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6V4H5l7 8-7 8h13v-2"/></svg>Cálculos</button>
+  <button class="tab" data-v="informe" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6v18h13V8z"/><path d="M14 3v5h5"/></svg>Informe</button>
+</div></nav>
+
+<div class="busy" id="busy" hidden><div class="box"><div class="spin"></div><b id="busyMsg">Procesando…</b><span class="muted">La foto no sale de este teléfono.</span></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/numerics.js"></script>
+<script src="js/metrics.js"></script>
+<script src="js/explain.js"></script>
+<script src="js/detector.js"></script>
+<script src="js/overlay.js"></script>
+<script src="js/report.js"></script>
+<script src="js/recursos.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
