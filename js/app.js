@@ -238,6 +238,12 @@
       const d = new Date(), p = (n) => String(n).padStart(2, "0");
       const filename = `Informe_${stem}_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.pdf`;
       busy(null);
+      if (window.AndroidArmonia) { // APK: lo guarda Android en Descargas y lo abre
+        const donde = window.AndroidArmonia.guardarPdf(filename, doc.output("datauristring").split(",")[1]);
+        $("#btnShare").hidden = false;
+        toast(donde ? `Informe guardado en ${donde}` : "No se pudo guardar el informe.");
+        return;
+      }
       doc.save(filename);
       state.pdfFile = new File([doc.output("blob")], filename, { type: "application/pdf" });
       const canShare = navigator.canShare && navigator.canShare({ files: [state.pdfFile] });
@@ -246,6 +252,7 @@
     } catch (err) { fail(err); }
   });
   $("#btnShare").addEventListener("click", async () => {
+    if (window.AndroidArmonia) { window.AndroidArmonia.compartirPdf(); return; }
     if (!state.pdfFile) return;
     try { await navigator.share({ files: [state.pdfFile], title: "Informe de armonía facial" }); }
     catch (e) { if (e && e.name !== "AbortError") toast("No se pudo compartir el PDF."); }
@@ -262,6 +269,13 @@
   // Modo sin conexión (solo en https o localhost): guarda la app, el motor y el modelo.
   if ("serviceWorker" in navigator && window.isSecureContext && !window.ARMONIA_SIN_SW) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+  // Tarjeta «Instalar en el celular» (no aparece dentro del APK); el botón del APK solo si el archivo existe.
+  if (!window.AndroidArmonia) {
+    $("#installCard").hidden = false;
+    fetch("ArmoniaFacial.apk", { method: "HEAD", cache: "no-store" })
+      .then((r) => { if (r.ok) $("#apkRow").hidden = false; })
+      .catch(() => {});
   }
   A.app = { state, runImage, show };
   // Abre con la foto de ejemplo ya analizada para mostrar qué hace la app.

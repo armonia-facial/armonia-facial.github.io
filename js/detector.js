@@ -13,7 +13,10 @@
   A.loadDetector = function (onStatus) {
     if (landmarkerPromise) return landmarkerPromise;
     landmarkerPromise = (async () => {
-      const base = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${CFG.MP_VERSION}`;
+      // En el APK el motor viene incluido (ARMONIA_RUTAS.mpBase); en la web se usa el CDN.
+      const rutaMp = (window.ARMONIA_RUTAS && window.ARMONIA_RUTAS.mpBase) ||
+        `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${CFG.MP_VERSION}`;
+      const base = new URL(rutaMp, document.baseURI).href.replace(/\/$/, "");
       onStatus && onStatus("Cargando el motor de visión…");
       visionLib = await import(`${base}/vision_bundle.mjs`);
       const { FaceLandmarker, FilesetResolver } = visionLib;

@@ -78,6 +78,7 @@ p { margin: 0; }
 }
 .btn:active { transform: scale(0.97); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+a.btn { text-decoration: none; }
 .btn:focus-visible, .chip:focus-visible, .tab:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .btn svg { width: 20px; height: 20px; flex: none; }
 .btn[disabled] { opacity: .5; cursor: default; }
@@ -282,6 +283,16 @@ nav.tabs .in { max-width: 600px; margin: 0 auto; display: grid; grid-template-co
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4M8.2 13.2l7.6 4"/></svg>
         Compartir PDF</button>
         <button class="btn" id="btnDefaults" type="button">Valores por defecto</button></div>
+    </div>
+    <div class="card" id="installCard" hidden>
+      <h3>Instalar en el celular</h3>
+      <div class="row" id="apkRow" hidden>
+        <a class="btn primary" id="apkLink" href="ArmoniaFacial.apk" download="ArmoniaFacial.apk">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5V15M7 10.5l5 4.5 5-4.5M4 20h16"/></svg>
+          Descargar app para Android (APK)</a>
+      </div>
+      <p class="muted"><b>Android:</b> descargue el APK, ábralo y permita «instalar apps de origen desconocido». Funciona sin internet.</p>
+      <p class="muted"><b>iPhone:</b> abra esta página en Safari → botón Compartir → <b>Agregar a inicio</b>.</p>
     </div>
     <div class="card">
       <h3>Privacidad y ética</h3>
