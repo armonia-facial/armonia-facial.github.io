@@ -7,7 +7,9 @@
   const CW = PAGE_W - LEFT - RIGHT;
   const GRAY = [127, 127, 127], GRID = [191, 191, 191], ZEBRA = [242, 242, 242], INK2 = [64, 64, 64];
   const HEADER_TOP = 19.1, HEADER_H = 58.6;
-  const BOXES = [[56.6, 195.7], [257.3, 74.6], [336.8, 82.6], [424.4, 111.7]];
+  // Cuatro recuadros grises (x, ancho) y, a la derecha, el escudo de Ingeniería Civil (x, lado)
+  const BOXES = [[56.6, 156.0], [217.8, 70.7], [293.7, 79.0], [378.0, 106.1]];
+  const LOGO2 = [495.0, 45.2];
 
   // Las fuentes estándar del PDF (Times) usan WinAnsi: se traducen los símbolos que no tiene.
   const MAP = { "σ": "sigma", "μ": "mu", "θ": "theta", "φ": "phi", "Σ": "Suma ", "Δ": "Delta ", "√": "raíz", "≈": "~",
@@ -20,10 +22,16 @@
     BOXES.forEach(([x, w]) => doc.rect(x, HEADER_TOP, w, HEADER_H, "F"));
     doc.setTextColor(255, 255, 255);
     // Recuadro 1: escudo + universidad
-    const [x1, w1] = BOXES[0], logo = 40;
+    const [x1, w1] = BOXES[0], logo = 38;
     if (A.RECURSOS && A.RECURSOS.logo) doc.addImage(A.RECURSOS.logo, "PNG", x1 + 2.5, HEADER_TOP + (HEADER_H - logo) / 2, logo, logo);
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8);
-    centeredBlock(doc, A.UNIVERSIDAD_ENCABEZADO.map(clean), x1 + logo + 6, w1 - logo - 9, 11, 8);
+    doc.setFont("helvetica", "bold");
+    const lineas = A.UNIVERSIDAD_ENCABEZADO.map(clean), tw = w1 - logo - 6;
+    doc.setFontSize(1);
+    const fs1 = Math.min(8, (tw - 2) / Math.max(...lineas.map((t) => doc.getTextWidth(t))));
+    doc.setFontSize(fs1);
+    centeredBlock(doc, lineas, x1 + logo + 4, tw, fs1 * 1.32, fs1);
+    // Escudo de la Escuela de Ingeniería Civil, a la derecha
+    if (A.RECURSOS && A.RECURSOS.logo2) doc.addImage(A.RECURSOS.logo2, "PNG", LOGO2[0], HEADER_TOP + (HEADER_H - LOGO2[1]) / 2, LOGO2[1], LOGO2[1]);
     // Recuadros 2–4
     const texts = [[A.nombreSinTitulos(info.docente), 8], [info.encabezado_trabajo.toUpperCase(), 6.6], [info.lema_anio.toUpperCase(), 6.6]];
     texts.forEach(([t, size], k) => {

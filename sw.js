@@ -1,7 +1,7 @@
 /* Armonía Facial — modo sin conexión.
    Guarda la app, el modelo y el motor de visión la primera vez; después funciona sin internet. */
 "use strict";
-const CACHE = "armonia-7ba0094a22";
+const CACHE = "armonia-f5ab7050f6";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icono-192.png", "icono-512.png", "face_landmarker.task",
   "js/config.js", "js/numerics.js", "js/metrics.js", "js/explain.js", "js/detector.js", "js/overlay.js",
   "js/report.js", "js/recursos.js", "js/app.js"];
